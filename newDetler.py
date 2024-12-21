@@ -204,6 +204,15 @@ def calculateMove(previousPosition):
             else:
                 roszadaBlack = False
 
+    if difference in ('A8', 'B8', 'C8', 'D8', 'E8', 'F8', 'G8', 'H8'):
+        if stockfish.get_what_is_on_square(pionekRuszajacy.lower()) == 'Piece.WHITE_PAWN':
+            string = pionekRuszajacy + difference + 'q'
+            return string.lower, actualPosition
+    elif difference in ('A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'):
+        if stockfish.get_what_is_on_square(pionekRuszajacy.lower()) == 'Piece.BLACK_PAWN':
+            string = pionekRuszajacy + difference + 'q'
+            return string.lower, actualPosition
+
         
     string = pionekRuszajacy + difference
 
@@ -222,20 +231,12 @@ update_board_in_browser(board)
 print(board)
 print("--------------------")
 
-# previousPosition = [
-#     "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",  # Białe figury
-#     "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",  # Białe pionki
-#     "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",  # Czarne pionki
-#     "A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"   # Czarne figury
-# ]
-
-# newPosition = [
-#     "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",  # Białe figury
-#     "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",  # Białe pionki
-#     "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",  # Czarne pionki
-#     "A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"   # Czarne figury
-# ]
-
+basicPosition = [
+    "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",  # Białe figury
+    "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",  # Białe pionki
+    "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",  # Czarne pionki
+    "A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"   # Czarne figury
+]
 
 message = clientSocket.recv(1024).decode("utf-8")
 message = message.strip().split(',')
@@ -246,11 +247,22 @@ newPosition = message
 print(previousPosition)
 
 
+brakujace = set(basicPosition) - set(newPosition)
+print(list(brakujace))
+brakujace = list(brakujace)
+
+for brak in brakujace:
+    square = chess.parse_square(brak.lower())  
+    board.remove_piece_at(square)
+
+
 # Pętla gry
 while not board.is_game_over():
     try:
         # Ustawienie pozycji Stockfisha
         stockfish.set_fen_position(board.fen())
+        update_board_in_browser(board)
+
 
         # Ocena pozycji i propozycja ruchu Stockfisha
         stockfish_move = stockfish.get_top_moves(1)
