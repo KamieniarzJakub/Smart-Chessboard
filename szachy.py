@@ -6,13 +6,13 @@ from stockfish import Stockfish
 import time
 
 # Inicjalizacja Selenium i przeglądarki
-service = Service("chromedriver.exe")  # Ścieżka do chromedriver.exe
-driver = webdriver.Chrome(service=service)
-driver.get("https://lichess.org/editor/")
+#service = Service("chromedriver.exe")  # Ścieżka do chromedriver.exe
+#driver = webdriver.ChromiumEdge(service=service)
+#driver.get("https://lichess.org/editor/")
 
 # Inicjalizacja szachownicy i Stockfisha
 board = chess.Board()
-stockfish = Stockfish("stockfish/stockfish-windows-x86-64-avx2.exe")
+stockfish = Stockfish("/usr/games/stockfish")
 stockfish.set_depth(20)
 stockfish.set_skill_level(20)
 
@@ -24,7 +24,7 @@ roszadaBlack = True
 def update_board_in_browser(board):
     fen = board.fen().replace(" ", "_")
     fen_url = f"https://lichess.org/editor/{fen}"
-    driver.get(fen_url)
+    #driver.get(fen_url)
 
 
 def calculateMove(previousPosition):
@@ -37,6 +37,7 @@ def calculateMove(previousPosition):
             for element in previousPosition:
                 if element not in actualPosition:
                     difference = element
+                    print(difference)
 
             time.sleep(0.1)
             
@@ -218,17 +219,11 @@ print(board)
 print("--------------------")
 
 previousPosition = [
-    "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",  # Białe figury
-    "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",  # Białe pionki
-    "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",  # Czarne pionki
-    "A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"   # Czarne figury
+    "E1", "F1", "F8", "G8"
 ]
 
 newPosition = [
-    "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",  # Białe figury
-    "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",  # Białe pionki
-    "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",  # Czarne pionki
-    "A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"   # Czarne figury
+    "E1", "F1", "F8", "G8"
 ]
 
 
@@ -286,4 +281,4 @@ print("Koniec gry.")
 print("Wynik:", board.result())
 
 # Zamknięcie przeglądarki
-driver.quit()
+#driver.quit()

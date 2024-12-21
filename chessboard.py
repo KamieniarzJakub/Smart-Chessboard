@@ -134,5 +134,7 @@ while True:
             tca[channel].unlock()
     if len(output)>0:
         print(sorted(output), time.time())
-
+    print(",".join(output))
+    with open("move.txt", "w+") as file:
+        file.write(",".join(output))
 
