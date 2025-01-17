@@ -14,10 +14,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 
-
-image = Image.new("1", (128, 32))
-draw = ImageDraw.Draw(image)
-
 # Load a font in 2 different sizes.
 font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
 
@@ -119,9 +115,7 @@ def setup_mcp(channel):
         pola[channel][pin][-1].pull = Pull.UP
 
 
-def setup_led(channel):
-    if channel!=5:
-        return
+def setup_led():
     # Initialize the I2C bus:
     i2c = busio.I2C(board.SCL, board.SDA)
     
@@ -129,6 +123,8 @@ def setup_led(channel):
     return display
 
 def display_text(display,msg):
+    image = Image.new("1", (128, 32))
+    draw = ImageDraw.Draw(image)
     # text_displ = clientSocket.recv(1024).decode()
     draw.text((0, 0), msg, font=font, fill=255)
     display.fill(0)
@@ -167,12 +163,14 @@ for channel in pola.keys():
             if address!=0x70:
                 setup_mcp(channel)
         tca[channel].unlock()
-tca[5].try_lock()
+while not tca[5].try_lock():
+    pass
 for address in tca[5].scan():
     if address != 0x70:
-        display = setup_led(5)
-        display_text(display, "msg 123")
-    print(address)
+        display = setup_led()
+        display_text(display, "1Loading...")
+print("while...")
+tca[5].unlock()
 
 _output = "111"
 # output = "A2,B2,C2"
@@ -184,16 +182,6 @@ text_displ = "test"
 while True:
     output = []
     for channel in pola.keys():
-    #for channel in range(8):
-        # if channel ==5:
-        #     if tca[channel].try_lock():
-        #         text_displ = clientSocket.recv(1024).decode()
-        #         draw.text((0, 0), text_displ, font=font, fill=255)
-        #         display.fill(0)
-        #         display.image(image)
-        #         display.show()
-        #         tca[channel].unlock()
-
         if tca[channel].try_lock():
             for address in tca[channel].scan():
                 if address!=0x70: #Bylo w tutorialu, nie wiem czy potrzebne, ale dziala
@@ -209,7 +197,7 @@ while True:
     #     output = "A4,B2,C2"
 
     if output != _output:
-        if count == 2:
+        if count == 1:
             clientSocket.sendall((output).encode("utf-8"))
             count = 0
             _output = output
@@ -222,6 +210,11 @@ while True:
     try:
         data = clientSocket.recv(1024).decode("utf-8")
         print(data)
+        if tca[5].try_lock():
+            for address in tca[5].scan():
+                if address != 0x70:
+                    display_text(display, data)
+            tca[5].unlock()
     except socket.timeout:
         pass  
     time.sleep(0.1) # Możesz usunąć jak chcesz, bo widzę, że na starej wersji było, a tutaj nie ma

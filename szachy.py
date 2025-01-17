@@ -13,7 +13,7 @@ driver.get("https://lichess.org/editor/")
 # Inicjalizacja szachownicy i Stockfisha
 board = chess.Board()
 stockfish = Stockfish("/usr/games/stockfish")
-stockfish.set_depth(11)
+stockfish.set_depth(10)
 stockfish.set_skill_level(20)
 
 global roszadaWhite, roszadaBlack
