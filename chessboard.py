@@ -217,3 +217,11 @@ while True:
             count += 1
     else:
         count = 0
+
+    clientSocket.settimeout(0.1)  
+    try:
+        data = clientSocket.recv(1024).decode("utf-8")
+        print(data)
+    except socket.timeout:
+        pass  
+    time.sleep(0.1) # Możesz usunąć jak chcesz, bo widzę, że na starej wersji było, a tutaj nie ma
