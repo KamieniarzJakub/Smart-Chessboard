@@ -5,11 +5,11 @@ import board
 import busio
 from digitalio import Direction, Pull
 from adafruit_mcp230xx.mcp23017 import MCP23017
+import socket
 
 pola = {
   0:{
-        # BEZ 4, 11, 13, 15
-        0:["C5"],
+        # BEZ 0, 4, 11, 13, 15
         1:["C6"],
         2:["C7"],
         3:["C8"],
@@ -23,7 +23,7 @@ pola = {
         14:["A6"]
         },
     1:{
-        #Wszystkie bez 2
+        #Wszystkie bez 2 i 8
         0:["G5"],
         1:["G6"],
         3:["G8"],
@@ -31,7 +31,6 @@ pola = {
         5:["H6"],
         6:["H7"],
         7:["H8"],
-        8:["F8"],
         9:["F7"],
         10:["F6"],
         11:["F5"],
@@ -77,12 +76,14 @@ pola = {
         15:["A1"]
         },
     7:{
-        #Bez 1 oraz 14>num>5
+        #Bez 1 oraz 12>num>5
         0:["G7"],
         2:["B5"],
         3:["A5"],
         4:["A7"],
         5:["D5"],
+        12:["C5"],
+        13:["F8"],
         14:["C1"],
         15:["D4"]
         }
@@ -108,10 +109,19 @@ def read_mcp(channel):
         if button.value:
             fields.append(field)
             #print(channel, "Button #", field, "pressed!", time.time())
-            time.sleep(0.1)
+            #time.sleep(0.01)
     return fields
 
 
+host="127.0.0.1"
+port = 8080
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind((host, port))
+server.listen(1)
+
+clientSocket, clientAddress = server.accept()
 
 i2c = board.I2C() #uses board.SCL and board.SDA
 tca = adafruit_tca9548a.TCA9548A(i2c)
@@ -121,6 +131,12 @@ for channel in pola.keys():
             if address!=0x70:
                 setup_mcp(channel)
         tca[channel].unlock()
+
+_output = "111"
+# output = "A2,B2,C2"
+# clientSocket.sendall((output).encode("utf-8"))
+count = 0
+start = time.time()
 
 while True:
     output = []
@@ -134,5 +150,18 @@ while True:
             tca[channel].unlock()
     if len(output)>0:
         print(sorted(output), time.time())
+    output = ",".join(output)
+    # if time.time() > start + 10:
+    #     output = "B2,C2"
+    # if time.time() > start + 20:
+    #     output = "A4,B2,C2"
 
-
+    if output != _output:
+        if count == 2:
+            clientSocket.sendall((output).encode("utf-8"))
+            count = 0
+            _output = output
+        else:
+            count += 1
+    else:
+        count = 0
