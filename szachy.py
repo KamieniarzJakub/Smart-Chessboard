@@ -273,7 +273,7 @@ while not board.is_game_over():
         best_move = stockfish_move[0]["Move"]
         print(f"Ruch Stockfisha: {best_move}")
 
-
+        clientSocket.send(str.encode(best_move,"utf8"))
 
         # Wprowadzenie ruchu użytkownika
         move, newPosition = calculateMove(previousPosition)

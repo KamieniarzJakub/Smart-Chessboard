@@ -7,6 +7,24 @@ from digitalio import Direction, Pull
 from adafruit_mcp230xx.mcp23017 import MCP23017
 import socket
 
+from board import SCL, SDA, MISO, MOSI
+import busio
+import adafruit_ssd1306
+from PIL import Image, ImageDraw, ImageFont
+
+
+
+
+image = Image.new("1", (128, 32))
+draw = ImageDraw.Draw(image)
+
+# Load a font in 2 different sizes.
+font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+
+# Draw the text
+
+
+
 pola = {
   0:{
         # BEZ 0, 4, 11, 13, 15
@@ -101,6 +119,24 @@ def setup_mcp(channel):
         pola[channel][pin][-1].pull = Pull.UP
 
 
+def setup_led(channel):
+    if channel!=5:
+        return
+    # Initialize the I2C bus:
+    i2c = busio.I2C(board.SCL, board.SDA)
+    
+    display = adafruit_ssd1306.SSD1306_I2C(128,32,i2c)
+    return display
+
+def display_text(display,msg):
+    # text_displ = clientSocket.recv(1024).decode()
+    draw.text((0, 0), msg, font=font, fill=255)
+    display.fill(0)
+    display.image(image)
+    display.show()
+    
+  
+display = None
 
 def read_mcp(channel):
     fields = []
@@ -131,17 +167,33 @@ for channel in pola.keys():
             if address!=0x70:
                 setup_mcp(channel)
         tca[channel].unlock()
+tca[5].try_lock()
+for address in tca[5].scan():
+    if address != 0x70:
+        display = setup_led(5)
+        display_text(display, "msg 123")
+    print(address)
 
 _output = "111"
 # output = "A2,B2,C2"
 # clientSocket.sendall((output).encode("utf-8"))
 count = 0
 start = time.time()
+text_displ = "test"
 
 while True:
     output = []
     for channel in pola.keys():
     #for channel in range(8):
+        # if channel ==5:
+        #     if tca[channel].try_lock():
+        #         text_displ = clientSocket.recv(1024).decode()
+        #         draw.text((0, 0), text_displ, font=font, fill=255)
+        #         display.fill(0)
+        #         display.image(image)
+        #         display.show()
+        #         tca[channel].unlock()
+
         if tca[channel].try_lock():
             for address in tca[channel].scan():
                 if address!=0x70: #Bylo w tutorialu, nie wiem czy potrzebne, ale dziala
