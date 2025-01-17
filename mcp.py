@@ -41,7 +41,7 @@ for pin in port_b_pins:
 
 while True:
     for num, button in enumerate(port_b_pins):
-        if button.value:
+        if button.value and num!=3:
             print("Button #", num, "pressed!", time.time())
             # turn on matching port A pin
             time.sleep(0.1)
