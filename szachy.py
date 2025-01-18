@@ -16,6 +16,7 @@ stockfish = Stockfish("/usr/games/stockfish")
 stockfish.set_depth(10)
 stockfish.set_skill_level(20)
 
+# Zmienne globalne do obsługi roszady
 global roszadaWhite, roszadaBlack
 roszadaWhite = True
 roszadaBlack = True
@@ -27,9 +28,12 @@ def update_board_in_browser(board):
     driver.get(fen_url)
 
 
+# Funkcja obliczająca ruch użytkownika na podstawie zmiany pozycji
 def calculateMove(previousPosition):
     global roszadaWhite, roszadaBlack
     actualPosition = previousPosition
+
+    # Oczekiwanie na zmianę pozycji szachownicy
     while(previousPosition == actualPosition):
         message = clientSocket.recv(1024).decode("utf-8")
         actualPosition = message.strip().split(',')
@@ -46,18 +50,19 @@ def calculateMove(previousPosition):
     previousPosition = actualPosition
     lenPrevious = len(previousPosition)
     bicie = False
-
+    
+    # Sprawdzanie, czy nastąpiło zbicie
     while(previousPosition == actualPosition):
         message = clientSocket.recv(1024).decode("utf-8")
         actualPosition = message.strip().split(',')
 
-        if lenPrevious - len(actualPosition) == 1:
+        if lenPrevious - len(actualPosition) == 1:    # Jeśli zmniejszyła się liczba pionków
             bicie = True
             for element in previousPosition:
                 if element not in actualPosition:
                     difference = element                        
             break
-        elif lenPrevious - len(actualPosition) == -1:
+        elif lenPrevious - len(actualPosition) == -1:    # Jeśli zwiększyła się liczba pionków
             for element in actualPosition:
                 if element not in previousPosition:
                     difference = element
@@ -65,9 +70,9 @@ def calculateMove(previousPosition):
         else:
             time.sleep(0.1)
 
-    # print(difference)
     previousPosition = actualPosition
 
+    # Obsługa ruchów związanych ze zbiciem
     if bicie == True:
         pionekZbity = difference
         
@@ -84,6 +89,8 @@ def calculateMove(previousPosition):
         return string.lower(), actualPosition
     
     previousPosition = actualPosition
+
+    # Obsługa specjalnych przypadków, takich jak roszady
     if roszadaWhite == True:
         if pionekRuszajacy == 'E1':
             if difference == 'G1':
@@ -100,7 +107,6 @@ def calculateMove(previousPosition):
                     time.sleep(0.1)               
 
                 previousPosition = actualPosition
-                # print(_difference)
 
                 while(previousPosition == actualPosition):
                     message = clientSocket.recv(1024).decode("utf-8")
@@ -112,12 +118,11 @@ def calculateMove(previousPosition):
                             __difference = element
                     time.sleep(0.1)               
 
-                print(f"asdasdadas{actualPosition}")
-
                 string = pionekRuszajacy + _ruch
                 print(string.lower())
 
                 return string.lower(), actualPosition
+                
             elif difference == 'C1':
                 _ruch = difference
                 # Roszada długa biała
@@ -145,7 +150,7 @@ def calculateMove(previousPosition):
 
                 return string.lower(), actualPosition
             else:
-                roszadaWhite = False
+                roszadaWhite = False # Wyłączenie możliwości roszady białych
     
     if roszadaBlack == True:
         if pionekRuszajacy == 'E8':
@@ -175,6 +180,7 @@ def calculateMove(previousPosition):
                 print(string.lower())
 
                 return string.lower(), actualPosition
+                
             elif difference == 'C8':
                 _ruch = difference
                 # Roszada długa biaczarnała
@@ -202,8 +208,9 @@ def calculateMove(previousPosition):
 
                 return string.lower(), actualPosition
             else:
-                roszadaBlack = False
+                roszadaBlack = False    # Wyłączenie możliwości roszady czarnych
 
+    # Obsługa promocji danego pionka -> dama
     if difference in ('A8', 'B8', 'C8', 'D8', 'E8', 'F8', 'G8', 'H8'):
         if stockfish.get_what_is_on_square(pionekRuszajacy.lower()) == 'Piece.WHITE_PAWN':
             string = pionekRuszajacy + difference + 'q'
@@ -213,12 +220,16 @@ def calculateMove(previousPosition):
             string = pionekRuszajacy + difference + 'q'
             return string.lower, actualPosition
 
-        
+     # Rekurencja w przypadku błędnych ruchów (np. powtarzających się pozycji)
+    if string[:2] == string[2:]:
+        return calculateMove(actualPosition)
+    
     string = pionekRuszajacy + difference
 
     return string.lower(), actualPosition
             
 
+# Konfiguracja połączenia sieciowego
 import socket
 host = "127.0.0.1"
 port = 8080
@@ -231,6 +242,7 @@ update_board_in_browser(board)
 print(board)
 print("--------------------")
 
+# Pozycje początkowe figur
 basicPosition = [
     "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",  # Białe figury
     "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",  # Białe pionki
@@ -243,10 +255,9 @@ message = message.strip().split(',')
 previousPosition = message
 
 newPosition = message
-
 print(previousPosition)
 
-
+# Usuwanie brakujących figur
 brakujace = set(basicPosition) - set(newPosition)
 print(list(brakujace))
 brakujace = list(brakujace)
@@ -256,13 +267,12 @@ for brak in brakujace:
     board.remove_piece_at(square)
 
 
-# Pętla gry
+# Główna pętla gry
 while not board.is_game_over():
     try:
         # Ustawienie pozycji Stockfisha
         stockfish.set_fen_position(board.fen())
         update_board_in_browser(board)
-
 
         # Ocena pozycji i propozycja ruchu Stockfisha
         stockfish_move = stockfish.get_top_moves(1)
@@ -273,8 +283,7 @@ while not board.is_game_over():
         best_move = stockfish_move[0]["Move"]
         print(f"Ruch Stockfisha: {best_move}")
 
-        # clientSocket.send(str.encode(best_move,"utf8"))
-
+        # Wysyłanie najlepszego ruchu do wyświetlenia go na wyświetlaczu
         clientSocket.sendall(best_move.encode("utf-8"))
 
 
@@ -291,7 +300,7 @@ while not board.is_game_over():
             # Aktualizacja szachownicy w przeglądarce po ruchu gracza
             update_board_in_browser(board)
         else:
-            print("Nielegalny ruch. Spróbuj ponownie.")
+            # print("Nielegalny ruch. Spróbuj ponownie.")
             continue
 
         # Wykonanie ruchu przez Stockfisha
