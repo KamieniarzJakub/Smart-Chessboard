@@ -17,9 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 # Load a font in 2 different sizes.
 font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
 
-# Draw the text
-
-
+display_pins = [4,5]
 
 pola = {
   0:{
@@ -132,7 +130,7 @@ def display_text(display,msg):
     display.show()
     
   
-display = None
+led_displays = [None, None]
 
 def read_mcp(channel):
     fields = []
@@ -163,14 +161,16 @@ for channel in pola.keys():
             if address!=0x70:
                 setup_mcp(channel)
         tca[channel].unlock()
-while not tca[5].try_lock():
-    pass
-for address in tca[5].scan():
-    if address != 0x70:
-        display = setup_led()
-        display_text(display, "1Loading...")
-print("while...")
-tca[5].unlock()
+for i in display_pins:
+    while not tca[i].try_lock():
+        pass
+    for address in tca[i].scan():
+        if address != 0x70:
+            led_displays[i%2] = setup_led()
+            display_text(led_displays[i%2], "Loading...")
+    tca[i].unlock()
+
+
 
 _output = "111"
 # output = "A2,B2,C2"
@@ -210,11 +210,12 @@ while True:
     try:
         data = clientSocket.recv(1024).decode("utf-8")
         print(data)
-        if tca[5].try_lock():
-            for address in tca[5].scan():
-                if address != 0x70:
-                    display_text(display, data)
-            tca[5].unlock()
+        for i in display_pins:
+            if tca[i].try_lock():
+                for address in tca[i].scan():
+                    if address != 0x70:
+                        display_text(led_displays[i%2], data)
+                tca[i].unlock()
     except socket.timeout:
         pass  
     time.sleep(0.1) # Możesz usunąć jak chcesz, bo widzę, że na starej wersji było, a tutaj nie ma
