@@ -1,3 +1,5 @@
+#Część 2 - analiza szachownicy oraz wyświetlenie obecnego stanu na Lichess.org
+
 import chess
 from selenium import webdriver
 from selenium.webdriver.common.by import By
